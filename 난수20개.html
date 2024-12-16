@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The HL Game Sample</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <div id="check">
+        <h2>check</h2>
+        <p class="info-text" ></p>
+        <button>check</button>
+    </div>
+
+    <div id="register">
+        <h2>register</h2>
+
+        <input type="text" placeholder="name" class="name" > <br/>
+        <input type="text" placeholder="studentId" class="studentId"> <br/>
+        <input type="text" placeholder="passwd" class="passwd" > <br/>
+        <button >ok</button>
+    </div>
+
+    <div id="start_hl" >
+        <h2>start_hl</h2>
+        <button>start</button>
+    </div>
+
+    <div id="game" >
+        <h2>game</h2>
+        <input type="text" id="findnum" placeholder="guess secret number" value="" > <br/>
+        <button id="go">ok</button>
+    </div>
+    <div id="tableContainer">
+        <h3>Game Results:</h3> 
+        <table id="gameResultsTable">
+            <thead>
+                <tr>
+                    <th>게임 번호</th>
+                    <th>소요 시간 (초)</th>
+                    <th>정답 </th>
+                    <th>시도 횟수</th>
+                </tr>
+            </thead>
+            <tbody id="resultsTbody">
+                <!-- Results will be appended here dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <button id="resetButton">reset</button>
+    <script type="module">
+        const base_url = 'http://cbhai01.iptime.org:17870/api/v2/challenge'
+
+export default async function main() {
+    console.log("hello es6");
+
+    const _tx_info = document.querySelector("#check .info-text")
+    const btn_check = document.querySelector("#check button")
+    
+
+    const _registerForm = document.querySelector("#register")
+
+    btn_check.addEventListener('click', async () => {
+        try {
+
+            const response = await fetch(base_url,
+                {
+                    method: 'GET',
+
+                    headers: {
+                        'Content-Type': 'text/plain',
+                        'auth-token': 'DtqBzT4O'
+                    }
+                }
+            )
+            if (!response.ok) {
+                throw new Error("Network response not ok")
+            }
+            const data = await response.json()
+            console.log(data)
+
+            if(data.r == 'ok') {
+                _tx_info.innerText = `welcome to : ${data.info}`
+            }
+        }
+        catch (error) {
+            console.log(error)
+        }
+
+    });
+
+    _registerForm.querySelector('button').addEventListener('click', async () => {
+
+        const _name = _registerForm.querySelector('.name').value
+        const _passwd = _registerForm.querySelector('.passwd').value
+        const _studentId = _registerForm.querySelector('.studentId').value
+        const _classId = "2024_02"
+
+        try {
+
+            const param = new URLSearchParams({
+                name: _name,
+                passwd: _passwd,
+                studentId: _studentId,
+                classId: _classId
+            })
+
+            const response = await fetch(`${base_url}/register?${param}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'auth-token': 'DtqBzT4O'
+                    }
+                }
+            )
+            if (!response.ok) {
+                throw new Error("Network response not ok")
+            }
+            const data = await response.json()
+            console.log(data)
+
+            if(data.r == 'ok') {
+                _tx_info.innerText = `success : ${data.info}`
+            }
+            else {
+                _tx_info.innerText = `error : ${data.info}`
+            }
+        }
+        catch (error) {
+            console.log(error)
+        }
+    });
+
+    document.querySelector('#start_hl button').addEventListener('click', async () => {
+        const rows = document.querySelectorAll('#resultsTbody tr');
+        const gameNumber = rows.length + 1;
+        try {
+            
+            const _passwd = _registerForm.querySelector('.passwd').value
+            const _studentId = _registerForm.querySelector('.studentId').value
+
+            const param = new URLSearchParams({
+                passwd: _passwd,
+                studentId: _studentId
+            })
+
+            const response = await fetch(`${base_url}/start_hl?${param}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'auth-token': 'DtqBzT4O'
+                    }
+                }
+            )
+            if (!response.ok) {
+                throw new Error("Network response not ok")
+            }
+            const data = await response.json()
+            console.log(data)
+
+            if(data.r == 'ok') {
+                _tx_info.innerText = `success : ${data.info}`;
+            }
+            
+            else {
+                _tx_info.innerText = `error : ${data.info}`
+            }
+            
+            await findNumberFast(gameNumber);
+           /*      const table = document.getElementById('resultsTable');
+                /* if(!table){
+                 createResultTable();
+                } */
+                
+        }
+        
+        catch (error) {
+            console.log(error)
+        }
+        
+    });
+    document.querySelector('#game button').addEventListener('click', async () => {
+        try {
+
+            const _passwd = _registerForm.querySelector('.passwd').value
+            const _studentId = _registerForm.querySelector('.studentId').value
+            const _gussNum = document.querySelector('#game input').value
+
+            const param = new URLSearchParams({
+                passwd: _passwd,
+                studentId: _studentId,
+                num : _gussNum
+            })
+
+            const response = await fetch(`${base_url}/find_hl?${param}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'auth-token': 'DtqBzT4O'
+                    }
+                }
+            )
+            if (!response.ok) {
+                throw new Error("Network response not ok")
+            }
+            const data = await response.json()
+            console.log(data)
+
+            if(data.r == 'ok') {
+                _tx_info.innerText = `success : ${data.info}`
+            }
+            else {
+                _tx_info.innerText = `error : ${data.info}`
+            }
+            
+        }
+        catch (error) {
+            console.log(error)
+        }
+        
+    });
+}
+
+
+async function findNumberFast(gameNumber) {
+    const binaryStartTime12 = new Date().getTime(); // 이진탐색 시작 시간
+    console.log(`Binary search started at: ${new Date(binaryStartTime12).toISOString()}`);
+
+    let min = 1;
+    let max = 9999;
+    let attempts = 1;
+    let mid = 0;
+
+    const _passwd = document.querySelector('.passwd').value;
+    const _studentId = document.querySelector('.studentId').value;
+
+    console.log('Starting number search...');
+    console.log(`Initial min: ${min}, max: ${max}`);
+
+    const rangeSize = 5000; // 각 주요 범위 크기 (0~5000, 5000~10000)
+
+    // 난수를 생성하는 함수
+    const generateGuesses = (start, end, segmentSize, count) => {
+        const segments = Array.from({ length: Math.ceil((end - start + 1) / segmentSize) }, (_, i) => {
+            const rangeMin = start + i * segmentSize;
+            const rangeMax = Math.min(rangeMin + segmentSize - 1, end);
+            return { rangeMin, rangeMax };
+        });
+
+        return segments
+            .slice(0, count)
+            .map(({ rangeMin, rangeMax }) => 
+                Math.floor(Math.random() * (rangeMax - rangeMin + 1)) + rangeMin
+            );
+    };
+
+    // 첫 번째 난수 기반 탐색
+    while (min < max) {
+        const rangeStart = min;
+        const rangeEnd = Math.min(max, min + rangeSize - 1); // 각 주요 범위 크기 내에서 작업
+        const guesses = generateGuesses(rangeStart, rangeEnd, 500, 10);
+
+        console.log(`Generated guesses in range ${rangeStart}~${rangeEnd}: ${guesses}`);
+
+        const promises = guesses.map(guess => sendGuess(guess, _passwd, _studentId));
+        const results = await Promise.all(promises); // 병렬로 서버 요청 수행
+
+        let found = false;
+        for (let i = 0; i < results.length; i++) {
+            const guess = guesses[i];
+            const result = results[i];
+
+            console.log(`Random sampling #${i + 1}: Guess = ${guess}, Result = ${result}`);
+
+            if (result === "정답입니다.") {
+                findnum.value = guess;
+                document.getElementById('go').click();
+                found = true;
+                break;
+            } else if (result === "정답보다 작습니다.") {
+                min = Math.max(min, guess + 1); // 최소값 갱신
+            } else if (result === "정답보다 큽니다.") {
+                max = Math.min(max, guess - 1); // 최대값 갱신
+            }
+        }
+        attempts++;
+        if (found || min >= max) break; // 정답을 찾거나 범위가 좁혀지면 종료
+    }
+
+    console.log(`After random sampling: min = ${min}, max = ${max}`);
+
+    // 첫 번째 탐색 후 min >= max인 경우 종료
+    if (min > max) {
+        console.error("Search range invalid. Exiting.");
+        return;
+    }
+
+    const binaryStartTime = new Date().getTime(); // 이진탐색 시작 시간
+
+    // 이진 탐색 단계
+    while (min <= max) {
+        mid = Math.floor((min + max) / 2);
+        const isCorrect = await sendGuess(mid, _passwd, _studentId);
+        attempts++;
+
+        if (isCorrect === "정답입니다.") {
+            console.log(`Correct! The number is ${mid}`);
+            console.log(`Total attempts: ${attempts}`);
+            findnum.value = mid;
+            document.getElementById('go').click();
+            break; // 정답이면 종료
+        } else if (isCorrect === "정답보다 작습니다.") {
+            min = mid + 1; // 범위 좁히기
+        } else if (isCorrect === "정답보다 큽니다.") {
+            max = mid - 1; // 범위 좁히기
+        }
+    }
+
+    console.log(`Binary search completed. Total attempts: ${attempts}`);
+
+
+const binaryEndTime = new Date().getTime(); // 이진탐색 끝 시간
+console.log(`이진탐색Binary search duration: ${(binaryEndTime - binaryStartTime) / 1000} seconds`);
+
+const binaryEndTime12 = new Date().getTime(); // 총탐색 끝 시간
+console.log(`총Binary search duration: ${(binaryEndTime12 - binaryStartTime12) / 1000} seconds`);
+const elapsedTime = (binaryEndTime12 - binaryStartTime12) / 1000;
+console.log("Finished number search.");
+updateResultsTable(gameNumber, elapsedTime, mid, attempts);
+
+
+
+}
+
+// 별도의 서버 요청 함수
+async function sendGuess(guess, passwd, studentId) {
+    const param = new URLSearchParams({
+        passwd: passwd,
+        studentId: studentId,
+        num: guess
+    });
+
+    try {
+        const response = await fetch(`${base_url}/find_hl?${param}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'auth-token': 'DtqBzT4O'
+            }
+        });
+
+        const data = await response.json();
+        return data.info; // "정답입니다.", "정답보다 큽니다.", "정답보다 작습니다." 중 하나 반환
+    } catch (error) {
+        console.error("Error fetching API:", error);
+        throw error; // 에러 발생 시 throw
+    }
+}
+
+
+
+function updateResultsTable(gameNumber, elapsedTime, guessedNumber, incorrectGuesses) {
+    const tbody = document.getElementById('resultsTbody');
+
+    // 새 행 생성
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td>${gameNumber}</td>
+        <td>${elapsedTime} seconds</td>
+        <td>${guessedNumber}</td>
+        <td>${incorrectGuesses}</td>
+    `;
+    // 테이블에 행 추가
+    tbody.appendChild(row);
+    
+}
+
+    
+
+main();
+
+    </script>    
+</body>
+</html>

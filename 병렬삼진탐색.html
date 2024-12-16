@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The HL Game Sample</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <div id="check">
+        <h2>check</h2>
+        <p class="info-text" ></p>
+        <button>check</button>
+    </div>
+
+    <div id="register">
+        <h2>register</h2>
+
+        <input type="text" placeholder="name" class="name" > <br/>
+        <input type="text" placeholder="studentId" class="studentId"> <br/>
+        <input type="text" placeholder="passwd" class="passwd" > <br/>
+        <button >ok</button>
+    </div>
+
+    <div id="start_hl" >
+        <h2>start_hl</h2>
+        <button>start</button>
+    </div>
+
+    <div id="game" >
+        <h2>game</h2>
+        <input type="text" id="findnum" placeholder="guess secret number" value="" > <br/>
+        <button id="go">ok</button>
+    </div>
+    <div id="tableContainer">
+        <h3>Game Results:</h3> 
+        <table id="gameResultsTable">
+            <thead>
+                <tr>
+                    <th>게임 번호</th>
+                    <th>소요 시간 (초)</th>
+                    <th>정답 </th>
+                    <th>시도 횟수</th>
+                </tr>
+            </thead>
+            <tbody id="resultsTbody">
+                <!-- Results will be appended here dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <button id="resetButton">reset</button>
+    <script type="module">
+        const base_url = 'http://cbhai01.iptime.org:17870/api/v2/challenge'
+
+export default async function main() {
+    console.log("hello es6");
+
+    const _tx_info = document.querySelector("#check .info-text")
+    const btn_check = document.querySelector("#check button")
+    
+
+    const _registerForm = document.querySelector("#register")
+
+    btn_check.addEventListener('click', async () => {
+        try {
+
+            const response = await fetch(base_url,
+                {
+                    method: 'GET',
+
+                    headers: {
+                        'Content-Type': 'text/plain',
+                        'auth-token': 'DtqBzT4O'
+                    }
+                }
+            )
+            if (!response.ok) {
+                throw new Error("Network response not ok")
+            }
+            const data = await response.json()
+            console.log(data)
+
+            if(data.r == 'ok') {
+                _tx_info.innerText = `welcome to : ${data.info}`
+            }
+        }
+        catch (error) {
+            console.log(error)
+        }
+
+    });
+
+    _registerForm.querySelector('button').addEventListener('click', async () => {
+
+        const _name = _registerForm.querySelector('.name').value
+        const _passwd = _registerForm.querySelector('.passwd').value
+        const _studentId = _registerForm.querySelector('.studentId').value
+        const _classId = "2024_02"
+
+        try {
+
+            const param = new URLSearchParams({
+                name: _name,
+                passwd: _passwd,
+                studentId: _studentId,
+                classId: _classId
+            })
+
+            const response = await fetch(`${base_url}/register?${param}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'auth-token': 'DtqBzT4O'
+                    }
+                }
+            )
+            if (!response.ok) {
+                throw new Error("Network response not ok")
+            }
+            const data = await response.json()
+            console.log(data)
+
+            if(data.r == 'ok') {
+                _tx_info.innerText = `success : ${data.info}`
+            }
+            else {
+                _tx_info.innerText = `error : ${data.info}`
+            }
+        }
+        catch (error) {
+            console.log(error)
+        }
+    });
+
+    document.querySelector('#start_hl button').addEventListener('click', async () => {
+        const rows = document.querySelectorAll('#resultsTbody tr');
+        const gameNumber = rows.length + 1;
+        try {
+            
+            const _passwd = _registerForm.querySelector('.passwd').value
+            const _studentId = _registerForm.querySelector('.studentId').value
+
+            const param = new URLSearchParams({
+                passwd: _passwd,
+                studentId: _studentId
+            })
+
+            const response = await fetch(`${base_url}/start_hl?${param}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'auth-token': 'DtqBzT4O'
+                    }
+                }
+            )
+            if (!response.ok) {
+                throw new Error("Network response not ok")
+            }
+            const data = await response.json()
+            console.log(data)
+
+            if(data.r == 'ok') {
+                _tx_info.innerText = `success : ${data.info}`;
+            }
+            
+            else {
+                _tx_info.innerText = `error : ${data.info}`
+            }
+            
+            await findNumberFast(gameNumber);
+           /*      const table = document.getElementById('resultsTable');
+                /* if(!table){
+                 createResultTable();
+                } */
+                
+        }
+        
+        catch (error) {
+            console.log(error)
+        }
+        
+    });
+    document.querySelector('#game button').addEventListener('click', async () => {
+        try {
+
+            const _passwd = _registerForm.querySelector('.passwd').value
+            const _studentId = _registerForm.querySelector('.studentId').value
+            const _gussNum = document.querySelector('#game input').value
+
+            const param = new URLSearchParams({
+                passwd: _passwd,
+                studentId: _studentId,
+                num : _gussNum
+            })
+
+            const response = await fetch(`${base_url}/find_hl?${param}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'auth-token': 'DtqBzT4O'
+                    }
+                }
+            )
+            if (!response.ok) {
+                throw new Error("Network response not ok")
+            }
+            const data = await response.json()
+            console.log(data)
+
+            if(data.r == 'ok') {
+                _tx_info.innerText = `success : ${data.info}`
+            }
+            else {
+                _tx_info.innerText = `error : ${data.info}`
+            }
+            
+        }
+        catch (error) {
+            console.log(error)
+        }
+        
+    });
+}
+
+
+async function findNumberFast(gameNumber) {
+
+
+    const binaryStartTime12 = new Date().getTime(); // 이진탐색 시작 시간
+    console.log(`Binary search started at: ${new Date(binaryStartTime12).toISOString()}`);
+
+    let min = 1;
+    let max = 9999;
+    let attempts = 1;
+    let mid = 0;
+    let randomcheak = 0;
+
+    const _passwd = document.querySelector('.passwd').value;
+    const _studentId = document.querySelector('.studentId').value;
+
+    console.log('Starting number search...');
+    console.log(`Initial min: ${min}, max: ${max}`);
+
+    // 1. 범위를 20개로 나누고 난수 생성
+    const rangeSize = 5000; // 각 주요 범위 크기 (0~5000, 5000~10000)
+
+    // 난수를 생성하는 함수: 500 단위로 나눠 각 구간에서 난수 생성
+    const generateGuesses = (start, end, segmentSize, count) => {
+        const segments = Array.from({ length: Math.ceil((end - start + 1) / segmentSize) }, (_, i) => {
+            const rangeMin = start + i * segmentSize;
+            const rangeMax = Math.min(rangeMin + segmentSize - 1, end);
+            return { rangeMin, rangeMax };
+        });
+
+        // 각 500 단위 구간 내에서 하나의 난수를 생성
+        return segments
+            .slice(0, count) // 최대 count 개의 구간만 사용
+            .map(({ rangeMin, rangeMax }) => 
+                Math.floor(Math.random() * (rangeMax - rangeMin + 1)) + rangeMin
+            );
+    };
+
+    // 2. 병렬로 모든 난수 검토 및 결과 처리
+    while (randomcheak < 2) {
+        // 현재 범위에서 난수 생성
+        const rangeStart = min;
+        const rangeEnd = Math.min(max, min + rangeSize - 1); // 각 주요 범위 크기 내에서 작업
+        const guesses = generateGuesses(rangeStart, rangeEnd, 500, 10); // 500 단위로 나눔
+
+        console.log(`Generated guesses in range ${rangeStart}~${rangeEnd}: ${guesses}`);
+
+        const promises = guesses.map(guess => sendGuess(guess, _passwd, _studentId));
+        const results = await Promise.all(promises); // 병렬로 서버 요청 수행
+
+        // 병렬 결과 처리
+        let found = false;
+        for (let i = 0; i < results.length; i++) {
+            const guess = guesses[i];
+            const result = results[i];
+
+            console.log(`Random sampling #${i + 1}: Guess = ${guess}, Result = ${result}`);
+
+            if (result === "정답입니다.") {
+                findnum.value = guess;
+                document.getElementById('go').click();
+                return; // 정답 찾으면 종료
+            } else if (result === "정답보다 작습니다.") {
+                min = Math.max(min, guess + 1); // 최소값 갱신
+            } else if (result === "정답보다 큽니다.") {
+                max = Math.min(max, guess - 1); // 최대값 갱신
+            }
+        }
+        randomcheak++;
+    }
+
+
+
+    console.log(`After random sampling: min = ${min}, max = ${max}`);
+
+const binaryStartTime = new Date().getTime(); // 이진탐색 시작 시간
+
+// 2. 이진 탐색 단계
+while (min <= max) {
+    // 삼등분 지점 계산
+    const mid1 = Math.floor(min + (max - min) / 3);
+    const mid2 = Math.floor(max - (max - min) / 3);
+
+    // 두 값을 병렬로 서버에 요청
+    const [result1, result2] = await Promise.all([
+        sendGuess(mid1, _passwd, _studentId), // 첫 번째 삼등분 지점
+        sendGuess(mid2, _passwd, _studentId)  // 두 번째 삼등분 지점
+    ]);
+    attempts += 2; // 병렬 요청 두 번이므로 시도 횟수 2 증가
+
+    // 결과 처리
+    if (result1 === "정답입니다.") {
+        console.log(`Correct! The number is ${mid1}`);
+        console.log(`Total attempts: ${attempts}`);
+        findnum.value = mid1;
+        document.getElementById('go').click();
+        break;
+    }
+    if (result2 === "정답입니다.") {
+        console.log(`Correct! The number is ${mid2}`);
+        console.log(`Total attempts: ${attempts}`);
+        findnum.value = mid2;
+        document.getElementById('go').click();
+        break;
+    }
+
+    // 범위 조정
+    if (result1 === "정답보다 큽니다.") {
+        // 정답이 mid1보다 작음 -> 범위를 [min, mid1 - 1]로 좁힘
+        max = mid1 - 1;
+    } else if (result2 === "정답보다 작습니다.") {
+        // 정답이 mid2보다 큼 -> 범위를 [mid2 + 1, max]로 좁힘
+        min = mid2 + 1;
+    } else {
+        // 정답이 [mid1 + 1, mid2 - 1] 사이에 있음 -> 중간 범위로 좁힘
+        min = mid1 + 1;
+        max = mid2 - 1;
+    }
+}
+
+const binaryEndTime = new Date().getTime(); // 이진탐색 끝 시간
+console.log(`이진탐색Binary search duration: ${(binaryEndTime - binaryStartTime) / 1000} seconds`);
+
+const binaryEndTime12 = new Date().getTime(); // 총탐색 끝 시간
+console.log(`총Binary search duration: ${(binaryEndTime12 - binaryStartTime12) / 1000} seconds`);
+const elapsedTime = (binaryEndTime12 - binaryStartTime12) / 1000;
+console.log("Finished number search.");
+mid = findnum.value;
+console.log(mid);
+updateResultsTable(gameNumber, elapsedTime, mid, attempts);
+
+
+
+}
+
+// 별도의 서버 요청 함수
+async function sendGuess(guess, passwd, studentId) {
+    const param = new URLSearchParams({
+        passwd: passwd,
+        studentId: studentId,
+        num: guess
+    });
+
+    try {
+        const response = await fetch(`${base_url}/find_hl?${param}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'auth-token': 'DtqBzT4O'
+            }
+        });
+
+        const data = await response.json();
+        return data.info; // "정답입니다.", "정답보다 큽니다.", "정답보다 작습니다." 중 하나 반환
+    } catch (error) {
+        console.error("Error fetching API:", error);
+        throw error; // 에러 발생 시 throw
+    }
+}
+
+
+
+function updateResultsTable(gameNumber, elapsedTime, guessedNumber, incorrectGuesses) {
+    const tbody = document.getElementById('resultsTbody');
+
+    // 새 행 생성
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td>${gameNumber}</td>
+        <td>${elapsedTime} seconds</td>
+        <td>${guessedNumber}</td>
+        <td>${incorrectGuesses}</td>
+    `;
+    // 테이블에 행 추가
+    tbody.appendChild(row);
+    
+}
+
+    
+
+main();
+
+    </script>    
+</body>
+</html>
