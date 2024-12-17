@@ -121,3 +121,61 @@ async function findNumberFast() {
         }
     }
 }
+
+async function findNumberFast() {
+    const binaryStartTime12 = new Date().getTime(); // 전체 탐색 시작 시간
+    console.log(`Binary search started at: ${new Date(binaryStartTime12).toISOString()}`);
+
+    let min = 1;
+    let max = 9999;
+
+    const _passwd = document.querySelector('.passwd').value;
+    const _studentId = document.querySelector('.studentId').value;
+
+    console.log('Starting number search...');
+    console.log(`Initial range: min = ${min}, max = ${max}`);
+
+    // 고정된 숫자 배열
+    const fixedGuesses = [1000, 2500, 4000, 6000, 8000];
+    console.log(`Fixed guesses: ${fixedGuesses}`);
+
+    // 고정된 숫자 순차 처리
+    for (let i = 0; i < fixedGuesses.length; i++) {
+        const guess = fixedGuesses[i];
+        const result = await sendGuess(guess, _passwd, _studentId);
+
+        console.log(`Fixed guess #${i + 1}: Guess = ${guess}, Result = ${result}`);
+
+        if (result === "정답입니다.") {
+            console.log(`Correct! The number is ${guess}`);
+            findnum.value = guess;
+            document.getElementById('go').click();
+            return;
+        } else if (result === "정답보다 작습니다.") {
+            min = Math.max(min, guess + 1); // 최소값 갱신
+        } else if (result === "정답보다 큽니다.") {
+            max = Math.min(max, guess - 1); // 최대값 갱신
+        }
+    }
+
+    console.log(`After fixed guesses: min = ${min}, max = ${max}`);
+
+    // 이진탐색 시작
+    while (min <= max) {
+        const mid = Math.floor((min + max) / 2); // 중간값 계산
+        console.log(`Guessing mid = ${mid}`);
+
+        const result = await sendGuess(mid, _passwd, _studentId);
+
+        if (result === "정답입니다.") {
+            console.log(`Correct! The number is ${mid}`);
+            findnum.value = mid;
+            document.getElementById('go').click();
+            return;
+        } else if (result === "정답보다 작습니다.") {
+            min = mid + 1; // 최소값 갱신
+        } else if (result === "정답보다 큽니다.") {
+            max = mid - 1; // 최대값 갱신
+        }
+    }
+}
